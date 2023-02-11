@@ -47,11 +47,51 @@
 --Consider only players who attempted at least 20 stolen bases. 
 --Report the players' names, number of stolen bases, number of attempts, and stolen base percentage.
 
-SELECT nameFirst, nameLast, stolen_bases, total_attempts, (stolen_bases / total_attempts) AS success
-FROM(SELECT nameFirst, nameLast, SUM(sb) AS stolen_bases, SUM(cs) AS caught_stealing, (SUM(sb) + SUM(cs)) AS total_attempts
-FROM people
-INNER JOIN batting
-USING(playerid)
-WHERE sb >= 20 AND yearid = 2016
-GROUP BY nameFirst, nameLast) AS bases
-ORDER BY success DESC;
+-- SELECT success.nameFirst, success.nameLast, CAST(CAST(Success.stolen_bases AS DECIMAL(5, 2)) / success.total_attempts * 100 AS DECIMAL(5, 2)) AS success_stealing 
+-- FROM(SELECT nameFirst, nameLast, SUM(sb) AS stolen_bases, SUM(sb + cs) AS total_attempts
+-- 	FROM people
+-- 	INNER JOIN batting AS B
+-- 	USING(playerid)
+-- 	WHERE sb >= 20 
+-- 		AND yearid = 2016
+-- 	GROUP BY nameFirst, nameLast) AS success
+-- ORDER BY success_stealing DESC
+-- LIMIT 1;
+
+--5. From 1970 to 2016, what is the largest number of wins for a team that did not win the world series?
+
+-- SELECT teamid, COUNT(w) as number_of_wins
+-- FROM teams
+-- WHERE teamid NOT IN (
+-- 	SELECT teamid
+-- 	FROM teams
+-- 	WHERE yearid BETWEEN 1970 AND 2016 
+-- 		AND wswin = 'Y')
+-- GROUP BY teamid
+-- ORDER BY number_of_wins DESC
+-- LIMIT 1;
+
+--   What is the smallest number of wins for a team that did win the world series?
+-- WITH winning AS (SELECT yearid, teamid
+-- 			   FROM teams
+-- 			   WHERE yearid BETWEEN 1970 AND 2016
+-- 			   	AND wswin = 'Y')
+-- SELECT winning.yearid AS Year, winning.teamid AS Team, COUNT(w) as number_of_wins
+-- FROM teams
+-- INNER JOIN winning
+-- USING (yearid)
+-- GROUP BY Team, Year
+-- ORDER BY number_of_wins ASC
+-- LIMIT 1;
+
+
+
+--   Doing this will probably result in an unusually small number of wins for a world series champion; determine why this is the case. 
+--"The 1976 Reds became, and remain, the only team to sweep an entire multi-tier postseason, one of the crowning achievements of the franchise's Big Red Machine era.[1] 
+--They also became the third NL team (following the Chicago Cubs in 1907–08 and the New York Giants in 1921–22) to win consecutive World Series, and remain the last to do so."
+-- Wikipedia '1976 World Series'
+
+--Then redo your query, excluding the problem year. How often from 1970 to 2016 was it the case that a team with the most wins also won the world series? 
+--   What percentage of the time?
+
+
