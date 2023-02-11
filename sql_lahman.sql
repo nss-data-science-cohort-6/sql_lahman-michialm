@@ -165,3 +165,22 @@
 -- WHERE p.yearid = 2016 AND gs >= 10
 -- GROUP BY p.playerid
 -- ORDER BY EFFICIENCY
+
+--8. Find all players who have had at least 3000 career hits. 
+-- WITH hall AS (SELECT playerid, yearid
+-- 			FROM halloffame
+-- 			GROUP BY playerid, yearid)
+-- SELECT playerid, nameFIRST, nameLAST, SUM(h) AS hits, hall.yearid
+-- FROM batting
+-- INNER JOIN people
+-- USING (playerid)
+-- LEFT JOIN hof
+-- USING batting.playerid = hall.playerid
+-- GROUP BY playerid, nameFIRST, nameLast
+-- HAVING SUM(h) > 3000
+-- ORDER BY hits DESC
+
+-- Report those players' names, total number of hits, and the year they were inducted into the hall of fame 
+-- (If they were not inducted into the hall of fame, put a null in that column.) 
+-- Note that a player being inducted into the hall of fame is indicated by a 'Y' in the inducted column of the halloffame table.
+
