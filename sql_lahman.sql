@@ -93,5 +93,67 @@
 
 --Then redo your query, excluding the problem year. How often from 1970 to 2016 was it the case that a team with the most wins also won the world series? 
 --   What percentage of the time?
+-- WITH problem_year AS (SELECT DISTINCT yearid
+-- 					 FROM teams
+-- 					 WHERE yearid = 1976),
+-- -- 	Years AS (SELECT * 
+-- -- 			  FROM generate_series(1970, 2016, 1) AS gen),
+-- 	winning_teams AS (SELECT yearid, teamid, SUM(SELECT yearid, teamid, SUM(w) FROM teams GROUP BY yearid, teamid) AS wins
+-- 					  FROM teams
+-- 					  WHERE yearid BETWEEN 1970 AND 2016
+-- 					 GROUP BY yearid, teamid
+-- 					 ORDER BY wins DESC)
+-- SELECT winning_teams.yearid AS Year, winning_teams.teamid AS Team, MAX(winning_teams.wins) AS Max_Wins
+-- FROM teams
+-- INNER JOIN problem_year
+-- USING (yearid)
+-- LEFT JOIN winning_teams
+-- USING (yearid)
+-- WHERE winning_teams.yearid NOT IN (SELECT yearid FROM problem_year)
+-- GROUP BY Year, TEAM
+-- ORDER BY Year;
+
+-- WITH wins AS (SELECT yearid, teamid, SUM(w) as win_count
+-- 				FROM teams 
+-- 				WHERE yearid BETWEEN 1970 AND 2016
+-- 				GROUP BY yearid, teamid)
+-- SELECT DISTINCT wins.yearid, wins.teamid, MAX(wins.win_count)
+-- FROM teams
+-- INNER JOIN wins
+-- USING (yearid)
+-- GROUP BY wins.yearid, wins.teamid
+-- ORDER BY yearid;
+
+--6. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? 
+--Give their full name and the teams that they were managing when they won the award.
+-- WITH management AS (SELECT yearid, playerid, nameFIRST, nameLast, managers.teamid AS Team
+-- 				FROM people
+-- 				INNER JOIN managers
+-- 				USING (playerid)
+-- 				GROUP BY yearid, playerid, Team)
+-- SELECT TSN_Winners.yearid, nameFirst, nameLast, management.Team
+-- FROM (SELECT yearid, playerid, awardid
+-- FROM awardsmanagers
+-- WHERE awardid LIKE '%TSN%') AS TSN_Winners
+-- INNER JOIN management
+-- USING (yearid)
+-- GROUP BY TSN_Winners.yearid, nameFirst, nameLast
 
 
+-- SELECT yearid, playerid, nameFIRST, nameLast, managers.teamid AS Team
+-- FROM managers
+-- INNER JOIN people
+-- USING (playerid)
+-- WHERE playerid IN (SELECT playerid FROM awardsmanagers WHERE awardid LIKE '%TSN%')
+-- ORDER BY yearid
+
+-- SELECT awardsmanagers.yearid, playerid, teamid
+-- FROM awardsmanagers 
+-- INNER JOIN managers
+-- USING (playerid)
+-- WHERE awardid LIKE '%TSN%'
+-- GROUP BY awardsmanagers.yearid
+
+--7. Which pitcher was the least efficient in 2016 in terms of salary / strikeouts? 
+-- 	 Only consider pitchers who started at least 10 games (across all teams). 
+--   Note that pitchers often play for more than one team in a season, so be sure that you are counting all stats for each player.
