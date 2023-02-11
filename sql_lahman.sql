@@ -157,3 +157,11 @@
 --7. Which pitcher was the least efficient in 2016 in terms of salary / strikeouts? 
 -- 	 Only consider pitchers who started at least 10 games (across all teams). 
 --   Note that pitchers often play for more than one team in a season, so be sure that you are counting all stats for each player.
+
+-- SELECT DISTINCT p.playerid, SUM(so) AS strikeouts, SUM(salary) AS Total_Salary, CAST(SUM(so) / SUM(salary)) as EFFICIENCY
+-- FROM pitching p
+-- INNER JOIN salaries s
+-- USING (playerid)
+-- WHERE p.yearid = 2016 AND gs >= 10
+-- GROUP BY p.playerid
+-- ORDER BY EFFICIENCY
