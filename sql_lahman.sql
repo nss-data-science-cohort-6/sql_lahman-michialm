@@ -93,94 +93,72 @@
 
 --Then redo your query, excluding the problem year. How often from 1970 to 2016 was it the case that a team with the most wins also won the world series? 
 --   What percentage of the time?
--- WITH problem_year AS (SELECT DISTINCT yearid
--- 					 FROM teams
--- 					 WHERE yearid = 1976),
--- -- 	Years AS (SELECT * 
--- -- 			  FROM generate_series(1970, 2016, 1) AS gen),
--- 	winning_teams AS (SELECT yearid, teamid, SUM(SELECT yearid, teamid, SUM(w) FROM teams GROUP BY yearid, teamid) AS wins
--- 					  FROM teams
--- 					  WHERE yearid BETWEEN 1970 AND 2016
--- 					 GROUP BY yearid, teamid
--- 					 ORDER BY wins DESC)
--- SELECT winning_teams.yearid AS Year, winning_teams.teamid AS Team, MAX(winning_teams.wins) AS Max_Wins
--- FROM teams
--- INNER JOIN problem_year
--- USING (yearid)
--- LEFT JOIN winning_teams
--- USING (yearid)
--- WHERE winning_teams.yearid NOT IN (SELECT yearid FROM problem_year)
--- GROUP BY Year, TEAM
--- ORDER BY Year;
-
--- WITH wins AS (SELECT yearid, teamid, SUM(w) as win_count
--- 				FROM teams 
--- 				WHERE yearid BETWEEN 1970 AND 2016
--- 				GROUP BY yearid, teamid)
--- SELECT DISTINCT wins.yearid, wins.teamid, MAX(wins.win_count)
--- FROM teams
--- INNER JOIN wins
--- USING (yearid)
--- GROUP BY wins.yearid, wins.teamid
--- ORDER BY yearid;
+-- WITH wins_by_year AS (SELECT yearid, franchid, w AS wins, wswin as world_series_win,
+-- 							RANK() OVER(PARTITION BY yearid ORDER BY w DESC) AS Rank_by_Total_Wins
+-- 						FROM teams
+-- 						WHERE yearid BETWEEN 1970 AND 2016
+-- 						AND yearid <> 1981
+-- 						ORDER BY yearid)
+-- SELECT yearid, franchid, world_series_win
+-- FROM wins_by_year
+-- WHERE wins_by_year.Rank_by_Total_Wins = 1 AND world_series_win = 'Y'
+-- ORDER BY yearid
+--ANSWER: 52% of the Time
 
 --6. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? 
 --Give their full name and the teams that they were managing when they won the award.
--- WITH management AS (SELECT yearid, playerid, nameFIRST, nameLast, managers.teamid AS Team
--- 				FROM people
+
+-- SELECT TSN_WINNERS_Names.playerid, TSN_WINNERS_Names.nameFirst, TSN_WINNERS_Names.nameLast, TSN_WINNERS_Names.Team2, COUNT( DISTINCT lgid) AS lg_count
+-- 		FROM (WITH TSN_WINNERS AS (SELECT awardsmanagers.yearid, awardsmanagers.playerid, awardsmanagers.lgid, managers.teamid AS Team, awardid
+-- 				FROM awardsmanagers
 -- 				INNER JOIN managers
--- 				USING (playerid)
--- 				GROUP BY yearid, playerid, Team)
--- SELECT TSN_Winners.yearid, nameFirst, nameLast, management.Team
--- FROM (SELECT yearid, playerid, awardid
--- FROM awardsmanagers
--- WHERE awardid LIKE '%TSN%') AS TSN_Winners
--- INNER JOIN management
--- USING (yearid)
--- GROUP BY TSN_Winners.yearid, nameFirst, nameLast
+-- 				ON awardsmanagers.playerid = managers.playerid AND awardsmanagers.yearid = managers.yearid
+-- 				WHERE awardid LIKE '%TSN%')
+-- 			SELECT TSN_WINNERS.yearid, TSN_WINNERS.playerid, nameFirst, nameLast, TSN_WINNERS.Team AS Team2, TSN_WINNERS.lgid
+-- 			FROM people
+-- 			INNER JOIN TSN_WINNERS
+-- 			USING (playerid)) AS TSN_WINNERS_Names
+-- 		WHERE TSN_WINNERS_Names.playerid IN ('leylaji99', 'johnsda02', 'coxbo01', 'larusto01')
+-- 		GROUP BY TSN_WINNERS_Names.playerid, TSN_WINNERS_Names.nameFirst, TSN_WINNERS_Names.nameLast, TSN_WINNERS_Names.Team2
+-- 		ORDER BY lg_count DESC
 
-
--- SELECT yearid, playerid, nameFIRST, nameLast, managers.teamid AS Team
--- FROM managers
--- INNER JOIN people
--- USING (playerid)
--- WHERE playerid IN (SELECT playerid FROM awardsmanagers WHERE awardid LIKE '%TSN%')
--- ORDER BY yearid
-
--- SELECT awardsmanagers.yearid, playerid, teamid
--- FROM awardsmanagers 
--- INNER JOIN managers
--- USING (playerid)
--- WHERE awardid LIKE '%TSN%'
--- GROUP BY awardsmanagers.yearid
 
 --7. Which pitcher was the least efficient in 2016 in terms of salary / strikeouts? 
 -- 	 Only consider pitchers who started at least 10 games (across all teams). 
 --   Note that pitchers often play for more than one team in a season, so be sure that you are counting all stats for each player.
 
--- SELECT DISTINCT p.playerid, SUM(so) AS strikeouts, SUM(salary) AS Total_Salary, CAST(SUM(so) / SUM(salary)) as EFFICIENCY
--- FROM pitching p
--- INNER JOIN salaries s
--- USING (playerid)
--- WHERE p.yearid = 2016 AND gs >= 10
--- GROUP BY p.playerid
--- ORDER BY EFFICIENCY
+-- SELECT playerid, (salary / so) AS efficiency
+-- FROM (SELECT pitching.playerid, so, salary
+-- 		FROM pitching
+-- 		INNER JOIN salaries
+-- 		ON pitching.playerid = salaries.playerid AND pitching.yearid = salaries.yearid
+-- 		WHERE pitching.yearid = 2016 AND pitching.gs >= 10
+-- 		ORDER BY salary DESC) AS salary_strikeouts
+-- ORDER BY efficiency DESC
+
 
 --8. Find all players who have had at least 3000 career hits. 
--- WITH hall AS (SELECT playerid, yearid
--- 			FROM halloffame
--- 			GROUP BY playerid, yearid)
--- SELECT playerid, nameFIRST, nameLAST, SUM(h) AS hits, hall.yearid
+-- SELECT playerid, SUM(h) AS total_hits
 -- FROM batting
--- INNER JOIN people
--- USING (playerid)
--- LEFT JOIN hof
--- USING batting.playerid = hall.playerid
--- GROUP BY playerid, nameFIRST, nameLast
--- HAVING SUM(h) > 3000
--- ORDER BY hits DESC
+-- GROUP BY playerid
+-- HAVING SUM(h) >= 3000
+-- ORDER BY total_hits DESC
+
 
 -- Report those players' names, total number of hits, and the year they were inducted into the hall of fame 
 -- (If they were not inducted into the hall of fame, put a null in that column.) 
 -- Note that a player being inducted into the hall of fame is indicated by a 'Y' in the inducted column of the halloffame table.
+
+-- WITH hit_count_three_thou AS (SELECT playerid, SUM(h) AS total_hits
+-- 								FROM batting
+-- 								GROUP BY playerid
+-- 								HAVING SUM(h) >= 3000
+-- 								ORDER BY total_hits DESC)
+-- SELECT hit_count_three_thou.playerid, people.nameFirst, people.nameLast, hit_count_three_thou.total_hits, halloffame.yearid
+-- FROM people
+-- INNER JOIN hit_count_three_thou
+-- ON people.playerid = hit_count_three_thou.playerid
+-- INNER JOIN halloffame
+-- ON hit_count_three_thou.playerid = halloffame.playerid
+-- ORDER BY hit_count_three_thou.total_hits DESC
 
