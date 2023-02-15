@@ -61,16 +61,16 @@
 --Consider only players who attempted at least 20 stolen bases. 
 --Report the players' names, number of stolen bases, number of attempts, and stolen base percentage.
 
-SELECT success.nameFirst, success.nameLast, CAST(CAST(Success.stolen_bases AS DECIMAL(5, 2)) / success.total_attempts * 100 AS DECIMAL(5, 2)) AS success_stealing 
-FROM(SELECT nameFirst, nameLast, SUM(sb) AS stolen_bases, SUM(sb + cs) AS total_attempts
-	FROM people
-	INNER JOIN batting AS B
-	USING(playerid)
-	WHERE sb >= 20 
-		AND yearid = 2016
-	GROUP BY nameFirst, nameLast) AS success
-ORDER BY success_stealing DESC
-LIMIT 1;
+-- SELECT success.nameFirst, success.nameLast, CAST(CAST(Success.stolen_bases AS DECIMAL(5, 2)) / success.total_attempts * 100 AS DECIMAL(5, 2)) AS success_stealing 
+-- FROM(SELECT nameFirst, nameLast, SUM(sb) AS stolen_bases, SUM(sb + cs) AS total_attempts
+-- 	FROM people
+-- 	INNER JOIN batting AS B
+-- 	USING(playerid)
+-- 	WHERE sb >= 20 
+-- 		AND yearid = 2016
+-- 	GROUP BY nameFirst, nameLast) AS success
+-- ORDER BY success_stealing DESC
+-- LIMIT 1;
 
 --5. From 1970 to 2016, what is the largest number of wins for a team that did not win the world series?
 
@@ -136,6 +136,24 @@ LIMIT 1;
 -- 		GROUP BY TSN_WINNERS_Names.playerid, TSN_WINNERS_Names.nameFirst, TSN_WINNERS_Names.nameLast, TSN_WINNERS_Names.Team2
 -- 		ORDER BY lg_count DESC
 
+-- SELECT Winners.First_Name, Winners.Last_Name, COUNT( DISTINCT Winners.League) AS League_Count
+-- FROM (WITH TSN_winners AS (SELECT playerid, awardid, yearid, lgid
+-- 						FROM awardsmanagers
+-- 						WHERE awardid LIKE '%TSN%'),
+-- 			TSN_named_winners AS (SELECT people.playerid AS playerid, nameFirst, nameLast
+-- 						 	FROM people
+-- 						 	INNER JOIN TSN_winners
+-- 						 	ON TSN_winners.playerid = people.playerid)
+-- 	SELECT TSN_named_winners.nameFirst AS First_Name, 
+-- 		TSN_named_winners.nameLast AS Last_Name, 
+-- 		TSN_winners.yearid AS Year, managers.lgid AS League
+-- 	FROM managers
+-- 	INNER JOIN TSN_winners
+-- 	ON TSN_winners.playerid = managers.playerid AND TSN_winners.yearid = managers.yearid
+-- 	INNER JOIN TSN_named_winners
+-- 	ON TSN_named_winners.playerid = managers.playerid) AS Winners
+-- GROUP BY Winners.First_Name, Winners.Last_Name
+-- HAVING COUNT(DISTINCT Winners.League) > 1;	
 
 --7. Which pitcher was the least efficient in 2016 in terms of salary / strikeouts? 
 -- 	 Only consider pitchers who started at least 10 games (across all teams). 
@@ -170,23 +188,43 @@ LIMIT 1;
 -- 								ORDER BY total_hits DESC)
 -- SELECT hit_count_three_thou.playerid, people.nameFirst, people.nameLast, hit_count_three_thou.total_hits, halloffame.yearid
 -- FROM people
--- INNER JOIN hit_count_three_thou
+-- LEFT JOIN hit_count_three_thou
 -- ON people.playerid = hit_count_three_thou.playerid
--- INNER JOIN halloffame
+-- LEFT JOIN halloffame
 -- ON hit_count_three_thou.playerid = halloffame.playerid
 -- WHERE halloffame.inducted = 'Y'
--- ORDER BY hit_count_three_thou.total_hits DESC
+-- ORDER BY hit_count_three_thou.total_hits DESC;
 
 
 
 --9. Find all players who had at least 1,000 hits for two different teams. Report those players' full names.
-WITH hits_by_team_player AS (SELECT teamid, playerid, SUM(h) AS total_hits
-							FROM batting
-							GROUP BY teamid, playerid
-							HAVING SUM(h) >= 1000)
-SELECT hits_by_team_player.playerid, nameFirst, nameLast, COUNT(teamid) AS team_count
-FROM hits_by_team_player
-INNER JOIN people
-USING (playerid)
-GROUP BY hits_by_team_player.playerid, nameFirst, nameLast
-HAVING COUNT(teamid) >= 2
+-- WITH hits_by_team_player AS (SELECT teamid, playerid, SUM(h) AS total_hits
+-- 							FROM batting
+-- 							GROUP BY teamid, playerid
+-- 							HAVING SUM(h) >= 1000)
+-- SELECT hits_by_team_player.playerid, nameFirst, nameLast, COUNT(teamid) AS team_count
+-- FROM hits_by_team_player
+-- INNER JOIN people
+-- USING (playerid)
+-- GROUP BY hits_by_team_player.playerid, nameFirst, nameLast
+-- HAVING COUNT(teamid) >= 2
+
+--10. Find all players who hit their career highest number of home runs in 2016. 
+--    Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. 
+--    Report the players' first and last names and the number of home runs they hit in 2016.
+
+-- SELECT ID, nameFIRST, nameLast
+-- FROM (WITH players AS (SELECT playerid, SUM(hr) AS Homers 
+-- 				FROM batting 
+-- 				WHERE yearid = 2016 
+-- 				GROUP BY playerid)
+-- 	SELECT players.playerid AS ID, yearid AS Year, players.Homers AS Homers2, MAX(hr) AS Max_Homers
+-- 	FROM batting
+-- 	INNER JOIN players
+-- 	ON batting.playerid = players.playerid
+-- 	WHERE players.Homers > 0
+-- 	GROUP BY players.playerid, yearid, players.Homers
+-- 	HAVING MAX(hr) = players.Homers) AS Homeruns
+-- LEFT JOIN people
+-- ON ID = people.playerid
+-- WHERE year = 2016;
